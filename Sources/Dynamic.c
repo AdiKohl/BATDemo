@@ -26,6 +26,8 @@ int32_t DYN_GetSpeed(){
 
 
 
+
+
 #if 1 //PL_CONFIG_HAS_SHELL
 /*!
  * \brief Prints the system low power status
