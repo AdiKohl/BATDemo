@@ -24,6 +24,18 @@ int32_t DYN_GetSpeed(){
 
 }
 
+void DYN_CalcSpeed(){
+
+
+
+
+
+
+
+	 vTaskDelay(10);
+
+}
+
 
 
 
@@ -68,6 +80,18 @@ void DYN_Deinit(void) {
 
 void DYN_Init(void) {
   DYN_currSpeed = 0;
+
+  // Calculate Speed Task
+	TaskResult = xTaskCreate(DYN_CalcSpeed,
+		"CalcSpeed",
+		configMINIMAL_STACK_SIZE,
+		(void*) NULL,
+		tskIDLE_PRIORITY+1,
+		NULL
+	);
+	if(TaskResult != pdPASS){
+		for(;;){}
+	}
 
 }
 
