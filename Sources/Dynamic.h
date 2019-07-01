@@ -11,6 +11,7 @@
 
 
 
+
 #if 1 //PL_CONFIG_HAS_MOTOR_TACHO
 /*!
  * \brief Returns the previously calculated speed of the motor.
