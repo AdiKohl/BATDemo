@@ -25,8 +25,8 @@ int32_t DYN_GetSpeed(){
 }
 
 void DYN_CalcSpeed(){
-
-
+	int32_t result;
+	result = 21 + 11;
 
 
 
@@ -82,16 +82,11 @@ void DYN_Init(void) {
   DYN_currSpeed = 0;
 
   // Calculate Speed Task
-	TaskResult = xTaskCreate(DYN_CalcSpeed,
-		"CalcSpeed",
-		configMINIMAL_STACK_SIZE,
-		(void*) NULL,
-		tskIDLE_PRIORITY+1,
-		NULL
-	);
-	if(TaskResult != pdPASS){
-		for(;;){}
-	}
+  if (xTaskCreate(DYN_CalcSpeed, "CalcSpeed", 400/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS) {
+      for(;;){} /* error */
+    }
+
+
 
 }
 

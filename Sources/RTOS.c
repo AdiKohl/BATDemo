@@ -9,6 +9,7 @@
 #include "RTOS.h"
 #include "FRTOS1.h"
 #include "Bit1.h"
+#include "Dynamic.h"
 //#include "Application.h"
 //#include "LED.h"
 //#include "Buzzer.h"
@@ -144,6 +145,8 @@ if(TaskResult != pdPASS){
 if(TaskResult != pdPASS){
 	for(;;){}
 }
+
+
 
 
 /*Starten des Schedulers*/
