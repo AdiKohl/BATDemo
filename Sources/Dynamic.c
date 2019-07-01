@@ -16,11 +16,14 @@
 #include "UTIL1.h"
 #include "FRTOS1.h"
 #include <stdlib.h>
+#include <time.h>
 
 
 #define MASS_LOK		(100) 	//Masse der Lok in Tonnen
 #define MASS_WAG		(20) 	//Masse eines Wagens in Tonnen
 #define ANZ_WAG			(3)		// Anzahl der Wagen im Zug
+
+#define GLEITFAKTOR 	(0.9)
 
 #include "Tabellen.txt"
 
@@ -31,7 +34,10 @@ static int32_t DYN_MassZug;
 
 static float geschwindigkeit = 0;
 static float geschwindigkeitneu = 0;
+static float gleitbeschl = 0;
 static float beschleunigung = 0;
+
+
 
 static uint32_t DYN_SS = 0;
 
@@ -62,8 +68,9 @@ void DYN_CalcSpeed(){
 
 	int32_t vreal;
 
-
 	for(;;){
+
+
 
 		int VStufe = ((int)geschwindigkeit / 130) * 27;
 
@@ -109,6 +116,8 @@ void DYN_CalcSpeed(){
 
 		// Fahrwiderstände. masse = [t], geschwindigkeit = [km/h], beschleunigung = [m/s2] Kräfte = [N]
 		// Beschleunigungswiderstand
+		if(beschleunigung > 5.0) beschleunigung = 5.0;
+		if(beschleunigung < -5.0) beschleunigung = -5.0;
 		float Fb = 1000 * DYN_MassZug * beschleunigung * 1.1;
 
 		// Rollwiderstand
@@ -154,6 +163,7 @@ void DYN_CalcSpeed(){
 
 		// Beschleunigung berechnen
 		beschleunigung = (float)fres / (DYN_MassZug*1000);
+		//gleitbeschl = GLEITFAKTOR*gleitbeschl + (1.0-GLEITFAKTOR)*beschleunigung;
 
 		// Beschleunigung integrieren
 		geschwindigkeitneu = geschwindigkeit + beschleunigung * 0.01;
@@ -163,12 +173,16 @@ void DYN_CalcSpeed(){
 			geschwindigkeit = geschwindigkeitneu;
 		}
 
+
+
 		// Begrenzung der Geschwindigkeit
 		if(geschwindigkeit > 130) geschwindigkeit = 130;
 		if(geschwindigkeit < -130) geschwindigkeit = -130;
 
 
+
 		result = geschwindigkeit;
+
 		DYN_currSpeed = result;
 
 
