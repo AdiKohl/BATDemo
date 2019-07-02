@@ -35,13 +35,15 @@
 static int32_t DYN_currSpeed;
 static int32_t DYN_MassZug;
 static int32_t DYN_FAntrieb;
+static int32_t DYN_kiloAcc;
 static int32_t VStufe;
 
 static float geschwindigkeit = 0;
 static float geschwindigkeitneu = 0;
+static float beschlArray[20] = {0};
 static float gleitbeschl = 0;
 static float beschleunigung = 0;
-
+static float helpAcc = 0;
 
 
 static uint32_t DYN_SS = 0;
@@ -161,6 +163,7 @@ void DYN_CalcSpeed(){
 
 		// Fahrwiderstände. masse = [t], geschwindigkeit = [km/h], beschleunigung = [m/s2] Kräfte = [N]
 		// Beschleunigungswiderstand
+
 		if(beschleunigung > 5.0) beschleunigung = 5.0;
 		if(beschleunigung < -5.0) beschleunigung = -5.0;
 		float Fb = 1000 * DYN_MassZug * beschleunigung * 1.1;
@@ -224,12 +227,32 @@ void DYN_CalcSpeed(){
 		if(geschwindigkeit > 130) geschwindigkeit = 130;
 		if(geschwindigkeit < -130) geschwindigkeit = -130;
 
+		// bestimmung der Beschleunigung
+		for(int i=18;i>=0;i--){
+		beschlArray[i+1] = beschlArray[i];
+		}
+		beschlArray[0] = geschwindigkeit;
+
+
+		for(int i = 0; i<=9;i++){
+			helpAcc += beschlArray[i]*0.1;
+		}
+		for(int i = 10; i <= 19; i++){
+			helpAcc -= beschlArray[i]*0.1;
+		}
+
+		helpAcc = helpAcc/0.1;
+
+
+
+
 
 
 		result = geschwindigkeit;
 
 		DYN_currSpeed = result;
 		DYN_FAntrieb = fantrieb;
+		DYN_kiloAcc = (int)(helpAcc*1000);
 
 
 
