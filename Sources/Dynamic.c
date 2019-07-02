@@ -25,12 +25,17 @@
 
 #define GLEITFAKTOR 	(0.9)
 
+#define DO_INTERPOL		(1)
+
+
 #include "Tabellen.txt"
 
 
 /* Variabeln */
 static int32_t DYN_currSpeed;
 static int32_t DYN_MassZug;
+static int32_t DYN_FAntrieb;
+int32_t VStufe;
 
 static float geschwindigkeit = 0;
 static float geschwindigkeitneu = 0;
@@ -68,18 +73,35 @@ void DYN_CalcSpeed(){
 
 	int32_t vreal;
 
+
+#ifdef DO_INTERPOL
+	int32_t VStufeX;
+	int32_t VStufeY;
+	int32_t geschwgeru;
+	float x;
+#endif
+
+
 	for(;;){
 
 
 
-		int VStufe = ((int)geschwindigkeit / 130) * 27;
+
+
+#if DO_INTERPOL
+		VStufeX = ((int)geschwindigkeit / 130) * 27;
+		VStufeY = 1+((int)geschwindigkeit / 130) * 27;
+
+		geschwgeru = (int)geschwindigkeit;
+		x = geschwindigkeit-(float)geschwgeru;
+
 
 		if (DYN_SS > 0) {
-			fantrieb = Fahrtabelle[DYN_SS][VStufe];
+			fantrieb = ((int)((float)Fahrtabelle[DYN_SS][VStufeX]*(5-x))/5) + ((int)((float)Fahrtabelle[DYN_SS][VStufeY]*(x))/5);
 			//IF = stromberechnen(fantrieb);
 			fbrems = 0;
 		} else if (DYN_SS < 0) {
-			fbrems = Bremstabelle[DYN_SS][VStufe];
+			fbrems = Bremstabelle[-DYN_SS][VStufeX];
 			//IF = stromberechnen(fbrems);
 			fantrieb = 0;
 		} else {
@@ -87,6 +109,28 @@ void DYN_CalcSpeed(){
 			fbrems = 0;
 			//IF = 0;
 		}
+
+#endif
+#if !DO_INTERPOL
+		VStufe = ((int)geschwindigkeit / 130) * 27;
+
+		if (DYN_SS > 0) {
+			fantrieb = Fahrtabelle[DYN_SS][VStufe];
+			//IF = stromberechnen(fantrieb);
+			fbrems = 0;
+		} else if (DYN_SS < 0) {
+			fbrems = Bremstabelle[abs(DYN_SS)][VStufe];
+			//IF = stromberechnen(fbrems);
+			fantrieb = 0;
+		} else {
+			fantrieb = 0;
+			fbrems = 0;
+			//IF = 0;
+		}
+
+#endif
+
+
 
 /*
 		// Berechnung der Hangabtriebskraft und Krümmungswiderstand
@@ -184,6 +228,7 @@ void DYN_CalcSpeed(){
 		result = geschwindigkeit;
 
 		DYN_currSpeed = result;
+		DYN_FAntrieb = fantrieb;
 
 
 
