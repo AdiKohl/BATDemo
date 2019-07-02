@@ -9,30 +9,35 @@
 #define SOURCES_DYNAMIC_H_
 
 
+#include "FRTOS1.h"
+
+
+#define DYN_CONFIG_HAS_SHELL (1)
 
 
 
-#if 1 //PL_CONFIG_HAS_MOTOR_TACHO
+
+
+
 /*!
- * \brief Returns the previously calculated speed of the motor.
- * \param isLeft TRUE for left speed, FALSE for right speed.
- * \return Actual speed value
+ * \brief Returns the calculated speed.
+ * \return speed value in km/h
  */
 int32_t DYN_GetSpeed(void);
 
 /*!
  * \brief Calculates the speed based on the simulation model and Spannungsstufe input
  */
-void DYN_CalcSpeed(void);
+//static void DYN_CalcSpeed(void);
 
 /*!
  * \brief Calculates the current flowing through the motors based on the generated force
  */
-int32_t DYN_CalcCurr(int kraft);
+int32_t DYN_CalcCurr(int32_t kraft);
 
 
 
-#if 1 //PL_CONFIG_HAS_SHELL
+#if DYN_CONFIG_HAS_SHELL
 #include "CLS1.h"
 /*!
  * \brief Parses a command
@@ -50,6 +55,6 @@ void DYN_Deinit(void);
 /*! \brief Initialization of the module */
 void DYN_Init(void);
 
-#endif /* PL_CONFIG_HAS_MOTOR_TACHO */
+
 
 #endif /* SOURCES_DYNAMIC_H_ */

@@ -8,10 +8,11 @@
 
 //#include "Platform.h" /* interface to the platform */
 
+#include "Dynamic.h"
 
-#if 1 || PL_CONFIG_HAS_SHELL
+#if DYN_CONFIG_HAS_SHELL
   #include "CLS1.h"
-
+#endif
 
 #include "UTIL1.h"
 #include "FRTOS1.h"
@@ -85,8 +86,9 @@ int32_t DYN_CalcCurr(int32_t kraft){
 
 }
 
-void DYN_CalcSpeed(){
+static void DYN_CalcSpeed(void *pvParameters){
 	int32_t result;
+	(void)pvParameters; /* not used */
 
 	// Funktionseigene Variabeln
 	int32_t fhang = 0; //Da keine Streckenelemete vorhanden sind, kann fhang nicht berechnet werden.
@@ -128,9 +130,12 @@ void DYN_CalcSpeed(){
 		if(DYN_SS > 0) {
 			fantrieb = Fahrtabelle[DYN_SS][VStufeX]+(int)((float)((Fahrtabelle[DYN_SS][VStufeY]-Fahrtabelle[DYN_SS][VStufeX])/5)*x);
 			DYN_IF = DYN_CalcCurr(fantrieb);
+			fbrems = 0;
 		} else if(DYN_SS < 0) {
 			fbrems = Bremstabelle[-DYN_SS][VStufeX]+(int)((float)((Bremstabelle[-DYN_SS][VStufeY]-Bremstabelle[-DYN_SS][VStufeX])/5)*x);
 			DYN_IF = DYN_CalcCurr(fbrems);
+			if(geschwindigkeit == 0) DYN_IF = 0;
+			fantrieb = 0;
 		} else {
 			fantrieb = 0;
 			fbrems = 0;
@@ -271,7 +276,7 @@ void DYN_CalcSpeed(){
 
 
 
-#if 1 //PL_CONFIG_HAS_SHELL
+#if DYN_CONFIG_HAS_SHELL
 /*!
  * \brief Prints the system low power status
  * \param io I/O channel to use for printing status
@@ -281,7 +286,7 @@ static void DYN_PrintStatus(const CLS1_StdIOType *io) {
 
   CLS1_SendStatusStr((unsigned char*)"Dyn", (unsigned char*)"\r\n", io->stdOut);
   CLS1_SendStatusStr((unsigned char*)"  speed", (unsigned char*)"", io->stdOut);
-  CLS1_SendNum32s(DYN_GetSpeed(TRUE), io->stdOut);
+  CLS1_SendNum32s(DYN_GetSpeed(), io->stdOut);
   CLS1_SendStr((unsigned char*)" km/h\r\n", io->stdOut);
   UTIL1_Num32sToStr(buf, sizeof(buf), DYN_SS);
   UTIL1_strcat(buf, sizeof(buf), "\r\n");
@@ -349,5 +354,4 @@ void DYN_Init(void) {
 
 }
 
-#endif /* PL_CONFIG_HAS_MOTOR_TACHO */
 
