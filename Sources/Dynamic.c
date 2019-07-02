@@ -35,7 +35,7 @@
 static int32_t DYN_currSpeed;
 static int32_t DYN_MassZug;
 static int32_t DYN_FAntrieb;
-int32_t VStufe;
+static int32_t VStufe;
 
 static float geschwindigkeit = 0;
 static float geschwindigkeitneu = 0;
@@ -89,18 +89,19 @@ void DYN_CalcSpeed(){
 
 
 #if DO_INTERPOL
-		VStufeX = ((int)geschwindigkeit / 130) * 27;
-		VStufeY = 1+((int)geschwindigkeit / 130) * 27;
+		VStufeX = (int)(geschwindigkeit) / 5;
+		VStufeY = 1+(int)(geschwindigkeit) / 5;
+		VStufe = VStufeX;
 
-		geschwgeru = (int)geschwindigkeit;
-		x = geschwindigkeit-(float)geschwgeru;
+		//geschwgeru = (int)(geschwindigkeit*5.0);
+		x = geschwindigkeit-(float)(VStufe*5);
 
 
-		if (DYN_SS > 0) {
-			fantrieb = ((int)((float)Fahrtabelle[DYN_SS][VStufeX]*(5-x))/5) + ((int)((float)Fahrtabelle[DYN_SS][VStufeY]*(x))/5);
+		if (DYN_SS > 0 && VStufe <= 25) {
+			fantrieb = Fahrtabelle[DYN_SS][VStufeX]+(int)((float)((Fahrtabelle[DYN_SS][VStufeY]-Fahrtabelle[DYN_SS][VStufeX])/5)*x);
 			//IF = stromberechnen(fantrieb);
 			fbrems = 0;
-		} else if (DYN_SS < 0) {
+		} else if (DYN_SS < 0 && VStufe <= 25) {
 			fbrems = Bremstabelle[-DYN_SS][VStufeX];
 			//IF = stromberechnen(fbrems);
 			fantrieb = 0;
