@@ -13,6 +13,7 @@
 #include "FRTOS1.h"
 #include "RTOS.h"
 #include "Dynamic.h"
+#include "DriveSwitch.h"
 
 
 
@@ -150,6 +151,7 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
   CLS1_ParseCommand, /* Processor Expert Shell component, is first in list */
   SHELL_ParseCommand, /* our own module parser */
   DYN_ParseCommand,
+  DS_ParseCommand,
 
 #if 1 //FRTOS1_PARSE_COMMAND_ENABLED
   FRTOS1_ParseCommand, /* FreeRTOS shell parser */

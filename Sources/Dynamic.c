@@ -24,8 +24,6 @@
 #define MASS_WAG		(20) 	//Masse eines Wagens in Tonnen
 #define ANZ_WAG			(3)		// Anzahl der Wagen im Zug
 
-#define GLEITFAKTOR 	(0.9)
-
 #define DO_INTERPOL		(1)
 
 

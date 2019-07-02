@@ -50,6 +50,7 @@
 #include "SHELL.h"
 #include "ShellQueue.h"
 #include "Dynamic.h"
+#include "DriveSwitch.h"
 
 
 /*lint -save  -e970 Disable MISRA rule (6.3) checking. */
@@ -69,6 +70,7 @@ int main(void)
   SHELL_Init();
   SQUEUE_Init();
   DYN_Init();
+  DS_Init();
 
   /* Init RTOS at last because it starts the scheduler and other parts create tasks for it */
   RTOS_Init();

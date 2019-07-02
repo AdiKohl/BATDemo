@@ -8,7 +8,7 @@
 #ifndef SOURCES_DRIVESWITCH_H_
 #define SOURCES_DRIVESWITCH_H_
 
-#define DS_CONFIG_HAS_SHELL
+#define DS_CONFIG_HAS_SHELL (1)
 
 
 
@@ -16,7 +16,7 @@
 
 
 
-#ifdef DS_CONFIG_HAS_SHELL
+#if DS_CONFIG_HAS_SHELL
 #include "CLS1.h"
 /*!
  * \brief Parses a command

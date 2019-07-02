@@ -10,6 +10,7 @@
 #include "FRTOS1.h"
 #include "Bit1.h"
 #include "Dynamic.h"
+#include "DriveSwitch.h"
 //#include "Application.h"
 //#include "LED.h"
 //#include "Buzzer.h"
