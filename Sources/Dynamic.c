@@ -47,7 +47,8 @@ static float beschleunigung = 0;
 static float helpAcc = 0;
 
 
-static uint32_t DYN_SS = 0;
+static int32_t DYN_SS = 0;
+static int32_t DYN_MB = 0;
 
 // static int bisherigesStreckenelement = 0;
 
@@ -96,23 +97,19 @@ void DYN_CalcSpeed(){
 		VStufeY = 1+(int)(geschwindigkeit) / 5;
 		VStufe = VStufeX;
 
-		//geschwgeru = (int)(geschwindigkeit*5.0);
 		x = geschwindigkeit-(float)(VStufe*5);
 
 
-		if (DYN_SS > 0 && VStufe <= 25) {
+		fantrieb = 0;
+		fbrems = 0;
+		if(DYN_SS > 0) {
 			fantrieb = Fahrtabelle[DYN_SS][VStufeX]+(int)((float)((Fahrtabelle[DYN_SS][VStufeY]-Fahrtabelle[DYN_SS][VStufeX])/5)*x);
-			//IF = stromberechnen(fantrieb);
-			fbrems = 0;
-		} else if (DYN_SS < 0 && VStufe <= 25) {
-			fbrems = Fahrtabelle[abs(DYN_SS)][VStufeX]+(int)((float)((Fahrtabelle[abs(DYN_SS)][VStufeY]-Fahrtabelle[abs(DYN_SS)][VStufeX])/5)*x);
-			//IF = stromberechnen(fbrems);
-			fantrieb = 0;
-		} else {
-			fantrieb = 0;
-			fbrems = 0;
-			//IF = 0;
 		}
+
+		if(DYN_SS < 0) {
+			fbrems = Bremstabelle[-DYN_SS][VStufeX]+(int)((float)((Bremstabelle[-DYN_SS][VStufeY]-Bremstabelle[-DYN_SS][VStufeX])/5)*x);
+		}
+
 
 #endif
 #if !DO_INTERPOL
@@ -158,8 +155,7 @@ void DYN_CalcSpeed(){
 
 */
 		// Mechanische Bremsen
-		 int Bremshebel = 0;
-		 fmechbrems = Bremshebel * 776; //Muss noch genauer überlegt werden... Für analoge Inputs fehlt das Interface! 198000 / 255
+		 fmechbrems = DYN_MB * 776; //Muss noch genauer überlegt werden... Für analoge Inputs fehlt das Interface! 198000 / 255
 
 
 		// Fahrwiderstände. masse = [t], geschwindigkeit = [km/h], beschleunigung = [m/s2] Kräfte = [N]
@@ -273,11 +269,12 @@ static void DYN_PrintStatus(const CLS1_StdIOType *io) {
 static void DYN_PrintHelp(const CLS1_StdIOType *io) {
   CLS1_SendHelpStr((unsigned char*)"Dyn", (unsigned char*)"Group of Dynamics commands\r\n", io->stdOut);
   CLS1_SendHelpStr((unsigned char*)"  help|status", (unsigned char*)"Shows Dynamics help or status\r\n", io->stdOut);
-  CLS1_SendHelpStr((unsigned char*)"  SS [val]", (unsigned char*)"Set the SS\r\n", io->stdOut);
+  CLS1_SendHelpStr((unsigned char*)"  SS [-18 .. 28]", (unsigned char*)"Set the SS\r\n", io->stdOut);
+  CLS1_SendHelpStr((unsigned char*)"  MB [0 .. 255]", (unsigned char*)"Set the SS\r\n", io->stdOut);
 }
 
 uint8_t DYN_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io) {
-	uint32_t val;
+	int32_t val;
 	const unsigned char *p;
 
 	if (UTIL1_strcmp((char*)cmd, (char*)CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, (char*)"Dyn help")==0) {
@@ -291,10 +288,18 @@ uint8_t DYN_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
 	    if (UTIL1_xatoi(&p, &val)==ERR_OK) {
 	    	DYN_SS = val;
 	    	*handled = TRUE;
-	    } else {
+	    }  else {
 	        return ERR_FAILED; /* wrong format of command? */
 	    }
-  }
+  } else if (UTIL1_strncmp(cmd, "Dyn MB ", sizeof("Dyn MB ")-1)==0) {
+	    p = cmd+sizeof("Dyn MB ")-1;
+	    if (UTIL1_xatoi(&p, &val)==ERR_OK) {
+	    	DYN_MB = abs(val);
+	    	*handled = TRUE;
+	    }  else {
+	        return ERR_FAILED; /* wrong format of command? */
+	    }
+}
 
 
   return ERR_OK;
