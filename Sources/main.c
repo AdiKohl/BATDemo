@@ -65,27 +65,13 @@ int main(void)
   /* Write your code here */
   /* For example: for(;;) { } */
 
- // Bit1_PutVal();
+  /* Init all the components we need */
+  SHELL_Init();
+  SQUEUE_Init();
+  DYN_Init();
 
-SHELL_Init();
-SQUEUE_Init();
-DYN_Init();
-
-RTOS_Init();
-
-
-/*
-for(;;){
-
-	Bit1_NegVal();
-
-	WAIT1_Waitms(500);
-
-}
-*/
-
-
-
+  /* Init RTOS at last because it starts the scheduler and other parts create tasks for it */
+  RTOS_Init();
 
 
 

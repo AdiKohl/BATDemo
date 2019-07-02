@@ -21,9 +21,15 @@
 int32_t DYN_GetSpeed(void);
 
 /*!
- * \brief Calculates the speed based on the position information from the encoder.
+ * \brief Calculates the speed based on the simulation model and Spannungsstufe input
  */
 void DYN_CalcSpeed(void);
+
+/*!
+ * \brief Calculates the current flowing through the motors based on the generated force
+ */
+int32_t DYN_CalcCurr(int kraft);
+
 
 
 #if 1 //PL_CONFIG_HAS_SHELL

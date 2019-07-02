@@ -32,12 +32,13 @@
 
 
 /* Variabeln */
-static int32_t DYN_currSpeed;
-static int32_t DYN_MassZug;
-static int32_t DYN_FAntrieb;
-static int32_t DYN_BTotal;
-static int32_t DYN_kiloAcc;
-static int32_t VStufe;
+static int32_t DYN_currSpeed = 0;
+static int32_t DYN_MassZug = 0;
+static int32_t DYN_FAntrieb = 0;
+static int32_t DYN_BTotal = 0;
+static int32_t DYN_kiloAcc = 0;
+static int32_t DYN_IF = 0;
+static int32_t VStufe = 0;
 
 static float geschwindigkeit = 0;
 static float geschwindigkeitneu = 0;
@@ -58,6 +59,29 @@ static int32_t DYN_MB = 0;
 
 int32_t DYN_GetSpeed(){
 	return DYN_currSpeed;
+
+}
+
+int32_t DYN_CalcCurr(int32_t kraft){
+	if(kraft < 1472){
+		return (int32_t)(200*(kraft/1472)); // interpolation: strom = ya + (yb-ya)*(x-xa)/(xb-xa)
+	}else if (kraft < 2943){
+		return (int32_t)(200+100*(kraft-1472)/(1472));
+	}else if (kraft < 7358){
+		return (int32_t)(300+100*(kraft-2943)/(4415));
+	}else if (kraft < 11772){
+		return (int32_t)(400+100*(kraft-7358)/(4415));
+	}else if (kraft < 17658){
+		return (int32_t)(500+100*(kraft-11772)/(5886));
+	}else if (kraft < 26478){
+		return (int32_t)(600+100*(kraft-17658)/(8829));
+	}else if (kraft < 39240){
+		return (int32_t)(700+150*(kraft-26478)/(12753));
+	}else if (kraft < 100062){
+		return (int32_t)(850+650*(kraft-39240)/(60822));
+	}else {
+		return (int32_t)(1500+900*(kraft-100062)/(88290));
+	}
 
 }
 
@@ -100,14 +124,17 @@ void DYN_CalcSpeed(){
 		x = geschwindigkeit-(float)(VStufe*5);
 
 
-		fantrieb = 0;
-		fbrems = 0;
+
 		if(DYN_SS > 0) {
 			fantrieb = Fahrtabelle[DYN_SS][VStufeX]+(int)((float)((Fahrtabelle[DYN_SS][VStufeY]-Fahrtabelle[DYN_SS][VStufeX])/5)*x);
-		}
-
-		if(DYN_SS < 0) {
+			DYN_IF = DYN_CalcCurr(fantrieb);
+		} else if(DYN_SS < 0) {
 			fbrems = Bremstabelle[-DYN_SS][VStufeX]+(int)((float)((Bremstabelle[-DYN_SS][VStufeY]-Bremstabelle[-DYN_SS][VStufeX])/5)*x);
+			DYN_IF = DYN_CalcCurr(fbrems);
+		} else {
+			fantrieb = 0;
+			fbrems = 0;
+			DYN_IF = 0;
 		}
 
 
@@ -117,16 +144,16 @@ void DYN_CalcSpeed(){
 
 		if (DYN_SS > 0) {
 			fantrieb = Fahrtabelle[DYN_SS][VStufe];
-			//IF = stromberechnen(fantrieb);
+			DYN_IF = DYN_CalcCurr(fantrieb);
 			fbrems = 0;
 		} else if (DYN_SS < 0) {
-			fbrems = Bremstabelle[abs(DYN_SS)][VStufe];
-			//IF = stromberechnen(fbrems);
+			fbrems = Bremstabelle[-DYN_SS][VStufe];
+			DYN_IF = DYN_CalcCurr(fbrems);
 			fantrieb = 0;
 		} else {
 			fantrieb = 0;
 			fbrems = 0;
-			//IF = 0;
+			DYN_IF = 0;
 		}
 
 #endif
@@ -208,7 +235,7 @@ void DYN_CalcSpeed(){
 
 		// Beschleunigung berechnen
 		beschleunigung = (float)fres / (DYN_MassZug*1000);
-		//gleitbeschl = GLEITFAKTOR*gleitbeschl + (1.0-GLEITFAKTOR)*beschleunigung;
+
 
 		// Beschleunigung integrieren
 		geschwindigkeitneu = geschwindigkeit + beschleunigung * 0.01;
@@ -227,9 +254,9 @@ void DYN_CalcSpeed(){
 
 
 
-		result = geschwindigkeit;
 
-		DYN_currSpeed = result;
+
+		DYN_currSpeed = geschwindigkeit;
 		DYN_FAntrieb = fantrieb;
 		DYN_BTotal = fbremstotal;
 		DYN_kiloAcc = (int)(beschleunigung*1000);
