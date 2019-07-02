@@ -35,6 +35,7 @@
 static int32_t DYN_currSpeed;
 static int32_t DYN_MassZug;
 static int32_t DYN_FAntrieb;
+static int32_t DYN_BTotal;
 static int32_t DYN_kiloAcc;
 static int32_t VStufe;
 
@@ -104,7 +105,7 @@ void DYN_CalcSpeed(){
 			//IF = stromberechnen(fantrieb);
 			fbrems = 0;
 		} else if (DYN_SS < 0 && VStufe <= 25) {
-			fbrems = Bremstabelle[-DYN_SS][VStufeX];
+			fbrems = Fahrtabelle[abs(DYN_SS)][VStufeX]+(int)((float)((Fahrtabelle[abs(DYN_SS)][VStufeY]-Fahrtabelle[abs(DYN_SS)][VStufeX])/5)*x);
 			//IF = stromberechnen(fbrems);
 			fantrieb = 0;
 		} else {
@@ -164,9 +165,9 @@ void DYN_CalcSpeed(){
 		// Fahrwiderstände. masse = [t], geschwindigkeit = [km/h], beschleunigung = [m/s2] Kräfte = [N]
 		// Beschleunigungswiderstand
 
-		if(beschleunigung > 5.0) beschleunigung = 5.0;
-		if(beschleunigung < -5.0) beschleunigung = -5.0;
-		float Fb = 1000 * DYN_MassZug * beschleunigung * 1.1;
+		//if(beschleunigung > 5.0) beschleunigung = 5.0;
+		//if(beschleunigung < -5.0) beschleunigung = -5.0;
+		float Fb = 1 * DYN_MassZug * beschleunigung * 1.1;
 
 		// Rollwiderstand
 		int32_t Fr = 15 * DYN_MassZug;
@@ -227,24 +228,6 @@ void DYN_CalcSpeed(){
 		if(geschwindigkeit > 130) geschwindigkeit = 130;
 		if(geschwindigkeit < -130) geschwindigkeit = -130;
 
-		// bestimmung der Beschleunigung
-		for(int i=18;i>=0;i--){
-		beschlArray[i+1] = beschlArray[i];
-		}
-		beschlArray[0] = geschwindigkeit;
-
-
-		for(int i = 0; i<=9;i++){
-			helpAcc += beschlArray[i]*0.1;
-		}
-		for(int i = 10; i <= 19; i++){
-			helpAcc -= beschlArray[i]*0.1;
-		}
-
-		helpAcc = helpAcc/0.1;
-
-
-
 
 
 
@@ -252,7 +235,8 @@ void DYN_CalcSpeed(){
 
 		DYN_currSpeed = result;
 		DYN_FAntrieb = fantrieb;
-		DYN_kiloAcc = (int)(helpAcc*1000);
+		DYN_BTotal = fbremstotal;
+		DYN_kiloAcc = (int)(beschleunigung*1000);
 
 
 
