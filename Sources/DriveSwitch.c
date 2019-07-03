@@ -5,6 +5,7 @@
  *      Author: mail
  */
 
+#if 1
 /* Standard includes. */
 #include <stdio.h>
 #include <stdbool.h>
@@ -40,12 +41,16 @@ The times are converted from milliseconds to ticks using the pdMS_TO_TICKS() mac
 #define QUEUE_LENGTH	( 2 )
 
 /* The values sent to the queueController. */
-#define BUTTON_NONE			( -1L )
-#define BUTTON_LKS			( 1UL )
-#define BUTTON_SET			( 2UL )
-#define BUTTON_CANCEL		( 3UL )
-#define LANE_DETECT_0		( 4UL )
-#define LANE_DETECT_1		( 5UL )
+#define SNONE				( -1L )
+#define SFB0				( 1UL )
+#define SFN					( 2UL )
+#define SFD					( 3UL )
+#define SFM					( 4UL )
+#define SFP					( 5UL )
+#define SFPP				( 6UL )
+#define SBN					( 7UL )
+#define SBD					( 8UL )
+#define SBP					( 9UL )
 
 /*-----------------------------------------------------------*/
 
@@ -171,10 +176,7 @@ struct main_state
     uint32_t button;
     uint32_t statenr;
     unsigned char* statename;
-    bool led_lks;
-    bool led_lane;
-    bool led_steering;
-    bool servo;
+
 };
 
 main_state_fn	start,
@@ -198,9 +200,10 @@ void DS_ST_FB0(struct main_state * state)
 {
 	state->statenr = 1;
 	state->statename = "FB0";
-    if (state->button == BUTTON_LKS){
-        state->led_lks = true;
+    if (state->button == SFN){
         state->next = DS_ST_FN;
+    } else if(state->button == SBN){
+    	state->next = DS_ST_BN;
     }
     else{
         state->next = DS_ST_FB0;
@@ -211,12 +214,10 @@ void DS_ST_FN(struct main_state * state)
 {
 	state->statenr = 2;
 	state->statename = "FN";
-    if (state->button == BUTTON_LKS){
-        state->led_lks = false;
+    if (state->button == SFB0){
         state->next = DS_ST_FB0;
     }
-    else if (state->button == LANE_DETECT_1){
-        state->led_lane = true;
+    else if (state->button == SFD){
         state->next = DS_ST_FD;
     }
     else{
@@ -228,19 +229,11 @@ void DS_ST_FD(struct main_state * state)
 {
 	state->statenr = 3;
 	state->statename = "FD";
-    if (state->button == BUTTON_LKS){
-        state->led_lks = false;
-        state->led_lane = false;
-        state->next = DS_ST_FB0;
+    if (state->button == SFN){
+        state->next = DS_ST_FN;
     }
-    else if (state->button == LANE_DETECT_0){
-        state->led_lane = false;
+    else if (state->button == SFM){
         state->next = DS_ST_FM;
-    }
-    else if (state->button == BUTTON_SET){
-        state->led_steering = true;
-        state->servo = true;
-        state->next = DS_ST_FP;
     }
     else{
         state->next = DS_ST_FD;
@@ -251,13 +244,11 @@ void DS_ST_FM(struct main_state * state)
 {
 	state->statenr = 4;
 	state->statename = "FM";
-    if (state->button == BUTTON_LKS){
-        state->led_lks = false;
-        state->next = DS_ST_FB0;
-    }
-    else if (state->button == LANE_DETECT_1){
-        state->led_lane = true;
+    if (state->button == SFD){
         state->next = DS_ST_FD;
+    }
+    else if (state->button == SFP){
+        state->next = DS_ST_FP;
     }
     else{
         state->next = DS_ST_FM;
@@ -268,26 +259,67 @@ void DS_ST_FP(struct main_state * state)
 {
 	state->statenr = 5;
 	state->statename = "FP";
-    if (state->button == BUTTON_LKS){
-        state->led_lks = false;
-        state->led_lane = false;
-        state->led_steering = false;
-        state->servo = false;
-        state->next = DS_ST_FB0;
-    }
-    else if (state->button == BUTTON_CANCEL){
-        state->led_steering = false;
-        state->servo = false;
-        state->next = DS_ST_FD;
-    }
-    else if (state->button == LANE_DETECT_0){
-        state->led_lane = false;
-        state->led_steering = false;
-        state->servo = false;
+    if (state->button == SFM){
         state->next = DS_ST_FM;
+    }
+    else if (state->button == SFPP){
+        state->next = DS_ST_FP;
     }
     else{
         state->next = DS_ST_FP;
+    }
+}
+
+void DS_ST_FPP(struct main_state * state)
+{
+	state->statenr = 6;
+	state->statename = "FPP";
+    if (state->button == SFP){
+        state->next = DS_ST_FP;
+    }
+    else{
+        state->next = DS_ST_FPP;
+    }
+}
+
+void DS_ST_BN(struct main_state * state)
+{
+	state->statenr = 7;
+	state->statename = "BN";
+    if (state->button == SFB0){
+        state->next = DS_ST_FB0;
+    }
+    else if (state->button == SBD){
+        state->next = DS_ST_BD;
+    }
+    else{
+        state->next = DS_ST_BN;
+    }
+}
+
+void DS_ST_BD(struct main_state * state)
+{
+	state->statenr = 8;
+	state->statename = "BD";
+    if (state->button == SBN){
+        state->next = DS_ST_BN;
+    }
+    else if (state->button == SBP){
+        state->next = DS_ST_BP;
+    }
+    else{
+        state->next = DS_ST_BD;
+    }
+}
+void DS_ST_BP(struct main_state * state)
+{
+	state->statenr = 9;
+	state->statename = "BP";
+    if (state->button == SBD){
+        state->next = DS_ST_BD;
+    }
+    else{
+        state->next = DS_ST_BP;
     }
 }
 
@@ -303,7 +335,7 @@ static void DS_Controller(void *pvParameters){
 	 uint32_t ulReceivedValue;
 
 	    /* init FSM */
-	    struct main_state main_state = {start, "", 0, false, false, false, false};
+	    struct main_state main_state = {start, 0, 0,""};
 
 
 	for(;;) {
@@ -407,4 +439,4 @@ void DS_Init(void) {
 	    	}
 	     }
 }
-
+#endif
