@@ -37,6 +37,10 @@ The times are converted from milliseconds to ticks using the pdMS_TO_TICKS() mac
 The times are converted from milliseconds to ticks using the pdMS_TO_TICKS() macro. */
 #define ReadInput_FREQUENCY_MS	pdMS_TO_TICKS( 10 )
 
+/* The rate at which button input is checked by ReadButton.
+The times are converted from milliseconds to ticks using the pdMS_TO_TICKS() macro. */
+#define CalcSS_FREQUENCY_MS	pdMS_TO_TICKS( 330 )
+
 /* The number of items the queue can hold at once. */
 #define QUEUE_LENGTH	( 2 )
 
@@ -97,6 +101,12 @@ int32_t DS_GetSS(){
 	return DS_SS;
 
 }
+
+/*-----------------------------------------------------------*/
+
+
+
+
 
 /*-----------------------------------------------------------*/
 
@@ -354,7 +364,66 @@ static void DS_Controller(void *pvParameters){
     }
 }
 
+static void DS_SSCalculator(void *pvParameters){
+	(void)pvParameters;
+	TickType_t xNextWakeTime;
+	const TickType_t xBlockTime = CalcSS_FREQUENCY_MS;
+	int32_t DS_SSCounter = 0;
 
+	for(;;){
+
+		switch(state){
+		case 1: /* State: FB0 */
+			DS_SS = 0;
+			break;
+
+		case 2: /* State: FN */
+
+			break;
+
+		case 3: /* State: FD */
+			/* SS does not change */
+			break;
+
+		case 4: /* State: FM */
+
+			break;
+
+		case 5: /* State: FP */
+
+			break;
+
+		case 6: /* State: FPP */
+
+			break;
+
+		case 7: /* State BN */
+
+			break;
+
+		case 8: /* State BD */
+			/* SS does not change */
+			break;
+
+		case 9: /* State BP */
+
+			break;
+
+
+
+
+
+		}
+
+
+
+
+
+
+
+		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
+	}
+}
 
 
 #if DS_CONFIG_HAS_SHELL

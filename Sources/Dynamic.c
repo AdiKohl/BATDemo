@@ -67,6 +67,10 @@ int32_t DYN_GetSpeed(){
 
 }
 
+int32_t DYN_GetIF(){
+	return DYN_IF;
+}
+
 void DYN_SetSS(int32_t value){
 	DYN_SS = value;
 }

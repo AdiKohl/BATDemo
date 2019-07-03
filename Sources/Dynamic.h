@@ -21,9 +21,15 @@ void DYN_SetSS(int32_t value);
 
 /*!
  * \brief Returns the calculated speed.
- * \return speed value in km/h
+ * \return speed value in [km/h]
  */
 int32_t DYN_GetSpeed(void);
+
+/*!
+ * \brief Returns the calculated current.
+ * \return current in [A]
+ */
+int32_t DYN_GetIF(void);
 
 /*!
  * \brief Calculates the speed based on the simulation model and Spannungsstufe input
