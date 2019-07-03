@@ -74,6 +74,7 @@ static unsigned long showStateInterruptHandler(void)
 /* Variabeln */
 static int32_t DS_SS = 0;
 static int32_t DS_STNR = 0;
+static unsigned char* DS_STNM;
 
 
 
@@ -81,6 +82,10 @@ static int32_t DS_STNR = 0;
 
 int32_t DS_GetState(){
 	return DS_STNR;
+}
+
+unsigned char* DS_GetStateName(){
+	return DS_STNM;
 }
 
 int32_t DS_GetSS(){
@@ -165,6 +170,7 @@ struct main_state
     main_state_fn * next;
     uint32_t button;
     uint32_t statenr;
+    unsigned char* statename;
     bool led_lks;
     bool led_lane;
     bool led_steering;
@@ -172,107 +178,116 @@ struct main_state
 };
 
 main_state_fn	start,
-                lks_mode_off,
-                lks_mode_on,
-                detect_lane,
-                wait_detect,
-                follow_lane;
+				DS_ST_FB0,
+                DS_ST_FN,
+                DS_ST_FD,
+                DS_ST_FM,
+                DS_ST_FP,
+				DS_ST_FPP,
+				DS_ST_BN,
+				DS_ST_BD,
+				DS_ST_BP;
 
 void start(struct main_state * state)
 {
 	state->statenr = 0;
-    state->next = lks_mode_off;
+    state->next = DS_ST_FB0;
 }
 
-void lks_mode_off(struct main_state * state)
+void DS_ST_FB0(struct main_state * state)
 {
 	state->statenr = 1;
+	state->statename = "FB0";
     if (state->button == BUTTON_LKS){
         state->led_lks = true;
-        state->next = lks_mode_on;
+        state->next = DS_ST_FN;
     }
     else{
-        state->next = lks_mode_off;
+        state->next = DS_ST_FB0;
     }
 }
 
-void lks_mode_on(struct main_state * state)
+void DS_ST_FN(struct main_state * state)
 {
 	state->statenr = 2;
+	state->statename = "FN";
     if (state->button == BUTTON_LKS){
         state->led_lks = false;
-        state->next = lks_mode_off;
+        state->next = DS_ST_FB0;
     }
     else if (state->button == LANE_DETECT_1){
         state->led_lane = true;
-        state->next = detect_lane;
+        state->next = DS_ST_FD;
     }
     else{
-        state->next = lks_mode_on;
+        state->next = DS_ST_FN;
     }
 }
 
-void detect_lane(struct main_state * state)
+void DS_ST_FD(struct main_state * state)
 {
 	state->statenr = 3;
+	state->statename = "FD";
     if (state->button == BUTTON_LKS){
         state->led_lks = false;
         state->led_lane = false;
-        state->next = lks_mode_off;
+        state->next = DS_ST_FB0;
     }
     else if (state->button == LANE_DETECT_0){
         state->led_lane = false;
-        state->next = wait_detect;
+        state->next = DS_ST_FM;
     }
     else if (state->button == BUTTON_SET){
         state->led_steering = true;
         state->servo = true;
-        state->next = follow_lane;
+        state->next = DS_ST_FP;
     }
     else{
-        state->next = detect_lane;
+        state->next = DS_ST_FD;
     }
 }
 
-void wait_detect(struct main_state * state)
+void DS_ST_FM(struct main_state * state)
 {
 	state->statenr = 4;
+	state->statename = "FM";
     if (state->button == BUTTON_LKS){
         state->led_lks = false;
-        state->next = lks_mode_off;
+        state->next = DS_ST_FB0;
     }
     else if (state->button == LANE_DETECT_1){
         state->led_lane = true;
-        state->next = detect_lane;
+        state->next = DS_ST_FD;
     }
     else{
-        state->next = wait_detect;
+        state->next = DS_ST_FM;
     }
 }
 
-void follow_lane(struct main_state * state)
+void DS_ST_FP(struct main_state * state)
 {
 	state->statenr = 5;
+	state->statename = "FP";
     if (state->button == BUTTON_LKS){
         state->led_lks = false;
         state->led_lane = false;
         state->led_steering = false;
         state->servo = false;
-        state->next = lks_mode_off;
+        state->next = DS_ST_FB0;
     }
     else if (state->button == BUTTON_CANCEL){
         state->led_steering = false;
         state->servo = false;
-        state->next = detect_lane;
+        state->next = DS_ST_FD;
     }
     else if (state->button == LANE_DETECT_0){
         state->led_lane = false;
         state->led_steering = false;
         state->servo = false;
-        state->next = wait_detect;
+        state->next = DS_ST_FM;
     }
     else{
-        state->next = follow_lane;
+        state->next = DS_ST_FP;
     }
 }
 
@@ -300,6 +315,7 @@ static void DS_Controller(void *pvParameters){
         main_state.button = ulReceivedValue;
         main_state.next (&main_state);
         DS_STNR = main_state.statenr;
+        DS_STNM = main_state.statename;
 
 
 
@@ -320,6 +336,7 @@ static void DS_PrintStatus(const CLS1_StdIOType *io) {
   CLS1_SendStatusStr((unsigned char*)"DS", (unsigned char*)"\r\n", io->stdOut);
   CLS1_SendStatusStr((unsigned char*)"  state", (unsigned char*)"", io->stdOut);
   CLS1_SendNum32s(DS_GetState(), io->stdOut);
+  CLS1_SendStr(DS_GetStateName(), io->stdOut);
   CLS1_SendStr((unsigned char*)" \r\n", io->stdOut);
 
 }
