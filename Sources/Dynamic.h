@@ -13,11 +13,11 @@
 
 
 #define DYN_CONFIG_HAS_SHELL (1)
+#define DYN_CONFIG_HAS_DS (1)
 
 
 
-
-
+void DYN_SetSS(int32_t value);
 
 /*!
  * \brief Returns the calculated speed.

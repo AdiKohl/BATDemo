@@ -14,10 +14,16 @@
   #include "CLS1.h"
 #endif
 
+#if DYN_CONFIG_HAS_DS
+	#include "DriveSwitch.h"
+#endif
+
 #include "UTIL1.h"
 #include "FRTOS1.h"
 #include <stdlib.h>
 #include <time.h>
+
+
 
 
 #define MASS_LOK		(100) 	//Masse der Lok in Tonnen
@@ -61,6 +67,11 @@ int32_t DYN_GetSpeed(){
 
 }
 
+void DYN_SetSS(int32_t value){
+	DYN_SS = value;
+}
+
+
 int32_t DYN_CalcCurr(int32_t kraft){
 	if(kraft < 1472){
 		return (int32_t)(200*(kraft/1472)); // interpolation: strom = ya + (yb-ya)*(x-xa)/(xb-xa)
@@ -86,7 +97,10 @@ int32_t DYN_CalcCurr(int32_t kraft){
 
 static void DYN_CalcSpeed(void *pvParameters){
 	int32_t result;
-	(void)pvParameters; /* not used */
+	portTickType xLastWakeTime;
+
+	(void)pvParameters;
+	xLastWakeTime = xTaskGetTickCount();
 
 	// Funktionseigene Variabeln
 	int32_t fhang = 0; //Da keine Streckenelemete vorhanden sind, kann fhang nicht berechnet werden.
@@ -112,7 +126,9 @@ static void DYN_CalcSpeed(void *pvParameters){
 
 	for(;;){
 
-
+#if DYN_CONFIG_HAS_DS
+		DYN_SS = DS_GetSS();
+#endif
 
 
 
@@ -266,7 +282,7 @@ static void DYN_CalcSpeed(void *pvParameters){
 
 
 
-	 vTaskDelay(10);
+		FRTOS1_vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
 	}
 }
 
@@ -286,7 +302,7 @@ static void DYN_PrintStatus(const CLS1_StdIOType *io) {
   CLS1_SendStatusStr((unsigned char*)"  speed", (unsigned char*)"", io->stdOut);
   CLS1_SendNum32s(DYN_GetSpeed(), io->stdOut);
   CLS1_SendStr((unsigned char*)" km/h\r\n", io->stdOut);
-  UTIL1_Num32sToStr(buf, sizeof(buf), DYN_SS);
+  UTIL1_Num32sToStr(buf, sizeof(buf), DS_GetSS());
   UTIL1_strcat(buf, sizeof(buf), "\r\n");
   CLS1_SendStatusStr("  SS", buf, io->stdOut);
 

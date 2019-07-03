@@ -8,10 +8,22 @@
 #ifndef SOURCES_DRIVESWITCH_H_
 #define SOURCES_DRIVESWITCH_H_
 
+#include "FRTOS1.h"
+
 #define DS_CONFIG_HAS_SHELL (1)
+#define DS_CONGIF_HAS_DYN (1)
 
+/*!
+ * \brief Returns the current state.
+ * \return DS_State
+ */
+int32_t DS_GetState(void);
 
-
+/*!
+ * \brief Returns the Spannungsstufe.
+ * \return DS_SS
+ */
+int32_t DS_GetSS(void);
 
 
 
