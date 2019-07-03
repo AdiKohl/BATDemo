@@ -8,7 +8,11 @@
 #ifndef SOURCES_DRIVESWITCH_H_
 #define SOURCES_DRIVESWITCH_H_
 
-#include "FRTOS1.h"
+/* Kernel includes. */
+#include "UTIL1.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
 
 #define DS_CONFIG_HAS_SHELL (1)
 #define DS_CONGIF_HAS_DYN (1)
