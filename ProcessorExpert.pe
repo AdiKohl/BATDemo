@@ -3,7 +3,7 @@
   <Header>
     <Name>BATDemo</Name>
     <SavedBy>mail</SavedBy>
-    <ModificationStamp>13</ModificationStamp>
+    <ModificationStamp>19</ModificationStamp>
     <Date>2019-06-26</Date>
     <IDE>Eclipse IDE</IDE>
     <PEversion>1.12.2.RT7_b1550-0615</PEversion>
@@ -6343,7 +6343,7 @@
         <ReadOnly>false</ReadOnly>
         <UserReadOnly>false</UserReadOnly>
         <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-        <Value>8000</Value>
+        <Value>8400</Value>
         <Base>DEC</Base>
       </ItemState>
       <ItemState>

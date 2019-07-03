@@ -56,6 +56,16 @@ The times are converted from milliseconds to ticks using the pdMS_TO_TICKS() mac
 #define SBD					( 8UL )
 #define SBP					( 9UL )
 
+/* Values for Currents */
+#define DS_IF1H				( 1380UL )
+#define DS_IFM				( 1650UL )
+#define DS_IFPP				( 2100UL )
+#define DS_IBP1				( 1500UL )
+#define DS_IBP2				( 1600UL )
+#define DS_IBN				( 1300UL )
+
+
+
 /*-----------------------------------------------------------*/
 
 /* the Tasks used for the state machine */
@@ -364,21 +374,29 @@ static void DS_Controller(void *pvParameters){
     }
 }
 
-static void DS_SSCalculator(void *pvParameters){
+static void DS_SSCalc(void *pvParameters){
 	(void)pvParameters;
 	TickType_t xNextWakeTime;
 	const TickType_t xBlockTime = CalcSS_FREQUENCY_MS;
 	int32_t DS_SSCounter = 0;
+	int32_t DS_IF = 0;
 
 	for(;;){
-
-		switch(state){
+		DS_IF = DYN_GetIF();
+		DS_SSCounter++; /* count up every time (every 330ms) */
+		switch(DS_STNR){
 		case 1: /* State: FB0 */
 			DS_SS = 0;
 			break;
 
 		case 2: /* State: FN */
-
+			if(DS_SS > 0){
+				if(DS_IF > DS_IF1H && DS_SSCounter >= 2){
+					DS_SS--;
+				}else if(DS_IF <= DS_IF1H){
+					DS_SS--;
+				}
+			}
 			break;
 
 		case 3: /* State: FD */
@@ -386,19 +404,41 @@ static void DS_SSCalculator(void *pvParameters){
 			break;
 
 		case 4: /* State: FM */
-
+			if(DS_SS < 28){
+				if(DS_IF <= DS_IFM && DS_SSCounter >= 2){
+					DS_SS++;
+				}
+			}
 			break;
 
 		case 5: /* State: FP */
-
+			if(DS_SS < 28){
+				if(DS_IF > DS_IF1H && DS_IFM <= DS_IF && DS_SSCounter >= 2){
+					DS_SS++;
+				}else if(DS_IF <= DS_IF1H){
+					DS_SS++;
+				}
+			}
 			break;
 
 		case 6: /* State: FPP */
-
+			if(DS_SS < 28){
+				if(DS_IF > DS_IF1H && DS_IFPP <= DS_IF && DS_SSCounter >= 2){
+					DS_SS++;
+				}else if(DS_IF <= DS_IF1H){
+					DS_SS++;
+				}
+			}
 			break;
 
 		case 7: /* State BN */
-
+			if(DS_SS < 0 ){
+				if(DS_IF > DS_IBN && DS_SSCounter >= 2){
+					DS_SS++;
+				}else if(DS_IF <= DS_IBN){
+					DS_SS++;
+				}
+			}
 			break;
 
 		case 8: /* State BD */
@@ -406,13 +446,18 @@ static void DS_SSCalculator(void *pvParameters){
 			break;
 
 		case 9: /* State BP */
-
+			if(DS_SS < 0 ){
+				if(DS_IF > DS_IBP1 && DS_IF <= DS_IBP2 && DS_SSCounter >= 2){
+					DS_SS--;
+				}else if(DS_IF <= DS_IBP1){
+					DS_SS--;
+				}
+			}
 			break;
 
-
-
-
-
+		default:
+			DS_SS =0;
+			break;
 		}
 
 
@@ -420,6 +465,7 @@ static void DS_SSCalculator(void *pvParameters){
 
 
 
+		if(DS_SSCounter >= 2) DS_SSCounter = 0;
 
 		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 	}
@@ -494,16 +540,21 @@ void DS_Init(void) {
 	    queueController  = xQueueCreate(QUEUE_LENGTH, sizeof(uint32_t));
 	    if (queueController != NULL){
 	    	/* Create the tasks */
-	        if (xTaskCreate(tskReadInput, "ReadButton", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL ) != pdPASS){
-	        	for(;;){} /* error */
-	        }
+	        //if (xTaskCreate(tskReadInput, "ReadButton", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL ) != pdPASS){
+	        //	for(;;){} /* error */
+	        //}
 
 	        if(xTaskCreate(tskShowState, "ShowState", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL ) != pdPASS) {
 	        	for(;;){} /* error */
 	        }
 
 	    	// main state machine task
-	    	if (xTaskCreate(DS_Controller, "Controller", configMINIMAL_STACK_SIZE /*400/sizeof(StackType_t)*/, NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS) {
+	    	if (xTaskCreate(DS_Controller, "Controller", configMINIMAL_STACK_SIZE /*400/sizeof(StackType_t)*/, NULL, tskIDLE_PRIORITY+4, NULL) != pdPASS) {
+	    		for(;;){} /* error */
+	    	}
+
+	    	// main SS calculator task
+	    	if (xTaskCreate(DS_SSCalc, "SSCalc", configMINIMAL_STACK_SIZE /*400/sizeof(StackType_t)*/, NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS) {
 	    		for(;;){} /* error */
 	    	}
 	     }
