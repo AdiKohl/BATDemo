@@ -119,7 +119,7 @@ void RTOS_Init(void) {
   /*! \todo Create tasks here */
 	BaseType_t TaskResult;
 
-	//Blink Task LED
+/*	//Blink Task LED
 	TaskResult = xTaskCreate(MainTaskRTOS,
 			"MainTask",
 			configMINIMAL_STACK_SIZE,
@@ -128,10 +128,11 @@ void RTOS_Init(void) {
 			NULL
 	);
 
+
 if(TaskResult != pdPASS){
 	for(;;){}
 }
-
+*/
 	//Blink Task LED
 		TaskResult = xTaskCreate(BlinkLed,
 				"BlinkLedBaby",

@@ -35,7 +35,7 @@ The times are converted from milliseconds to ticks using the pdMS_TO_TICKS() mac
 
 /* The rate at which button input is checked by ReadButton.
 The times are converted from milliseconds to ticks using the pdMS_TO_TICKS() macro. */
-#define ReadInput_FREQUENCY_MS	pdMS_TO_TICKS( 10 )
+#define ReadInput_FREQUENCY_MS	pdMS_TO_TICKS( 50 )
 
 /* The rate at which button input is checked by ReadButton.
 The times are converted from milliseconds to ticks using the pdMS_TO_TICKS() macro. */
@@ -283,7 +283,7 @@ void DS_ST_FP(struct main_state * state)
         state->next = DS_ST_FM;
     }
     else if (state->button == SFPP){
-        state->next = DS_ST_FP;
+        state->next = DS_ST_FPP;
     }
     else{
         state->next = DS_ST_FP;
@@ -376,8 +376,13 @@ static void DS_Controller(void *pvParameters){
 
 static void DS_SSCalc(void *pvParameters){
 	(void)pvParameters;
+
+	/* Initialise xNextWakeTime - this only needs to be done once. */
 	TickType_t xNextWakeTime;
+	xNextWakeTime = xTaskGetTickCount();
+
 	const TickType_t xBlockTime = CalcSS_FREQUENCY_MS;
+
 	int32_t DS_SSCounter = 0;
 	int32_t DS_IF = 0;
 
@@ -446,7 +451,7 @@ static void DS_SSCalc(void *pvParameters){
 			break;
 
 		case 9: /* State BP */
-			if(DS_SS < 0 ){
+			if(DS_SS > -18 ){
 				if(DS_IF > DS_IBP1 && DS_IF <= DS_IBP2 && DS_SSCounter >= 2){
 					DS_SS--;
 				}else if(DS_IF <= DS_IBP1){
@@ -554,7 +559,7 @@ void DS_Init(void) {
 	    	}
 
 	    	// main SS calculator task
-	    	if (xTaskCreate(DS_SSCalc, "SSCalc", configMINIMAL_STACK_SIZE /*400/sizeof(StackType_t)*/, NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS) {
+	    	if (xTaskCreate(DS_SSCalc, "SSCalc", configMINIMAL_STACK_SIZE /*400/sizeof(StackType_t)*/, NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS) {
 	    		for(;;){} /* error */
 	    	}
 	     }
