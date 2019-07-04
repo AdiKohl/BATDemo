@@ -55,6 +55,16 @@ The times are converted from milliseconds to ticks using the pdMS_TO_TICKS() mac
 #define SBN					( 7UL )
 #define SBD					( 8UL )
 #define SBP					( 9UL )
+#define S_STST1				( 101UL )
+#define S_STST0				( 100UL )
+#define S_PAN1				( 111UL )
+#define S_PAN0				( 110UL )
+#define S_STHS1				( 121UL )
+#define S_STHS0				( 120UL )
+#define S_STKP1				( 131UL )
+#define S_STKP0				( 130UL )
+#define S_WE1				( 141UL )
+#define S_WE0				( 140UL )
 
 /* Values for Currents */
 #define DS_IF1H				( 1380UL )
@@ -94,6 +104,7 @@ static unsigned long showStateInterruptHandler(void)
 static int32_t DS_SS = 0;
 static int32_t DS_STNR = 0;
 static unsigned char* DS_STNM;
+static int32_t DS_Volt = 0;
 
 
 
@@ -111,6 +122,11 @@ int32_t DS_GetSS(){
 	return DS_SS;
 
 }
+
+void DS_SetVolt(int32_t val){
+	DS_Volt = val;
+}
+
 
 /*-----------------------------------------------------------*/
 
@@ -208,7 +224,12 @@ main_state_fn	start,
 				DS_ST_FPP,
 				DS_ST_BN,
 				DS_ST_BD,
-				DS_ST_BP;
+				DS_ST_BP,
+				DS_ST_STxx,
+				DS_ST_PAN,
+				DS_ST_STHS,
+				DS_ST_STKP,
+				DS_ST_WE;
 
 void start(struct main_state * state)
 {
@@ -224,6 +245,8 @@ void DS_ST_FB0(struct main_state * state)
         state->next = DS_ST_FN;
     } else if(state->button == SBN){
     	state->next = DS_ST_BN;
+    }else if(state->button == S_WE0){
+    	state->next = DS_ST_WE;
     }
     else{
         state->next = DS_ST_FB0;
@@ -343,6 +366,76 @@ void DS_ST_BP(struct main_state * state)
     }
 }
 
+void DS_ST_STxx(struct main_state * state)
+{
+	state->statenr = 10;
+	state->statename = "STxx";
+    if (state->button == S_STST1){
+
+        state->next = DS_ST_PAN;
+    }
+    else{
+        state->next = DS_ST_STxx;
+    }
+}
+
+void DS_ST_PAN(struct main_state * state)
+{
+	state->statenr = 11;
+	state->statename = "PAN";
+    if (state->button == S_STST0){
+        state->next = DS_ST_STxx;
+    } else if (state->button == S_PAN1){
+        state->next = DS_ST_STHS;
+    }
+    else{
+        state->next = DS_ST_PAN;
+    }
+}
+
+void DS_ST_STHS(struct main_state * state)
+{
+	state->statenr = 12;
+	state->statename = "STHS";
+    if (state->button == S_PAN0){
+        state->next = DS_ST_PAN;
+    } else if (state->button == S_STHS1){
+        state->next = DS_ST_STKP;
+    }
+    else{
+        state->next = DS_ST_STHS;
+    }
+}
+
+void DS_ST_STKP(struct main_state * state)
+{
+	state->statenr = 13;
+	state->statename = "STKP";
+    if (state->button == S_STHS0){
+        state->next = DS_ST_STHS;
+    } else if (state->button == S_STKP1){
+        state->next = DS_ST_WE;
+    }
+    else{
+        state->next = DS_ST_STKP;
+    }
+}
+
+void DS_ST_WE(struct main_state * state)
+{
+	state->statenr = 14;
+	state->statename = "WE";
+    if (state->button == S_STKP0){
+        state->next = DS_ST_STKP;
+    } else if (state->button == S_WE1){
+        state->next = DS_ST_FB0;
+    }
+    else{
+        state->next = DS_ST_WE;
+    }
+}
+
+
 /*-----------------------------------------------------------*/
 
 
@@ -396,7 +489,7 @@ static void DS_SSCalc(void *pvParameters){
 
 		case 2: /* State: FN */
 			if(DS_SS > 0){
-				if(DS_IF > DS_IF1H && DS_SSCounter >= 2){
+				if(DS_IF > DS_IF1H && DS_SSCounter >= 3){
 					DS_SS--;
 				}else if(DS_IF <= DS_IF1H){
 					DS_SS--;
@@ -410,7 +503,7 @@ static void DS_SSCalc(void *pvParameters){
 
 		case 4: /* State: FM */
 			if(DS_SS < 28){
-				if(DS_IF <= DS_IFM && DS_SSCounter >= 2){
+				if(DS_IF <= DS_IFM && DS_SSCounter >= 3){
 					DS_SS++;
 				}
 			}
@@ -418,7 +511,7 @@ static void DS_SSCalc(void *pvParameters){
 
 		case 5: /* State: FP */
 			if(DS_SS < 28){
-				if(DS_IF > DS_IF1H && DS_IFM <= DS_IF && DS_SSCounter >= 2){
+				if(DS_IF > DS_IF1H && DS_IFM <= DS_IF && DS_SSCounter >= 3){
 					DS_SS++;
 				}else if(DS_IF <= DS_IF1H){
 					DS_SS++;
@@ -428,7 +521,7 @@ static void DS_SSCalc(void *pvParameters){
 
 		case 6: /* State: FPP */
 			if(DS_SS < 28){
-				if(DS_IF > DS_IF1H && DS_IFPP <= DS_IF && DS_SSCounter >= 2){
+				if(DS_IF > DS_IF1H && DS_IFPP <= DS_IF && DS_SSCounter >= 3){
 					DS_SS++;
 				}else if(DS_IF <= DS_IF1H){
 					DS_SS++;
@@ -438,7 +531,7 @@ static void DS_SSCalc(void *pvParameters){
 
 		case 7: /* State BN */
 			if(DS_SS < 0 ){
-				if(DS_IF > DS_IBN && DS_SSCounter >= 2){
+				if(DS_IF > DS_IBN && DS_SSCounter >= 3){
 					DS_SS++;
 				}else if(DS_IF <= DS_IBN){
 					DS_SS++;
@@ -452,7 +545,7 @@ static void DS_SSCalc(void *pvParameters){
 
 		case 9: /* State BP */
 			if(DS_SS > -18 ){
-				if(DS_IF > DS_IBP1 && DS_IF <= DS_IBP2 && DS_SSCounter >= 2){
+				if(DS_IF > DS_IBP1 && DS_IF <= DS_IBP2 && DS_SSCounter >= 3){
 					DS_SS--;
 				}else if(DS_IF <= DS_IBP1){
 					DS_SS--;
@@ -467,11 +560,7 @@ static void DS_SSCalc(void *pvParameters){
 
 
 
-
-
-
-		if(DS_SSCounter >= 2) DS_SSCounter = 0;
-
+		if(DS_SSCounter >= 3) DS_SSCounter = 0;
 		vTaskDelayUntil(&xNextWakeTime, xBlockTime);
 	}
 }

@@ -29,7 +29,10 @@ int32_t DS_GetState(void);
  */
 int32_t DS_GetSS(void);
 
-
+/*!
+ * \brief Sets the Voltage which is used to set the PWM for the Fahrleiterspannnungsanzeige.
+ */
+void DS_SetVolt(int32_t val);
 
 
 #if DS_CONFIG_HAS_SHELL
