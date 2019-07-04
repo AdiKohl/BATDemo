@@ -17,7 +17,6 @@
 
 
 
-void DYN_SetSS(int32_t value);
 
 /*!
  * \brief Returns the calculated speed.
@@ -32,9 +31,9 @@ int32_t DYN_GetSpeed(void);
 int32_t DYN_GetIF(void);
 
 /*!
- * \brief Calculates the speed based on the simulation model and Spannungsstufe input
+ * \brief Sets the DYN_SS variable (used with the Shell).
  */
-//static void DYN_CalcSpeed(void);
+void DYN_SetSS(int32_t value);
 
 /*!
  * \brief Calculates the current flowing through the motors based on the generated force

@@ -6,8 +6,8 @@
  */
 
 
-//#include "Platform.h" /* interface to the platform */
 
+/* Includes */
 #include "Dynamic.h"
 
 #if DYN_CONFIG_HAS_SHELL
@@ -21,22 +21,17 @@
 #include "UTIL1.h"
 #include "FRTOS1.h"
 #include <stdlib.h>
-#include <time.h>
 
-
-
-
+/* Defines for constants (change if needed) */
 #define MASS_LOK		(100) 	//Masse der Lok in Tonnen
 #define MASS_WAG		(20) 	//Masse eines Wagens in Tonnen
 #define ANZ_WAG			(3)		// Anzahl der Wagen im Zug
 
-#define DO_INTERPOL		(1)
-
-
+/* Include the Fahr- and Bremstabelle */
 #include "Tabellen.txt"
 
 
-/* Variabeln */
+/* Variables needed for communication with J-Scope */
 static int32_t DYN_currSpeed = 0;
 static int32_t DYN_MassZug = 0;
 static int32_t DYN_FAntrieb = 0;
@@ -45,21 +40,16 @@ static int32_t DYN_kiloAcc = 0;
 static int32_t DYN_IF = 0;
 static int32_t VStufe = 0;
 
+/* Variables used for the calculation */
 static float geschwindigkeit = 0;
 static float geschwindigkeitneu = 0;
-static float beschlArray[20] = {0};
-static float gleitbeschl = 0;
 static float beschleunigung = 0;
-static float helpAcc = 0;
 
-
+/* Inputvariables */
 static int32_t DYN_SS = 0;
 static int32_t DYN_MB = 0;
 
-// static int bisherigesStreckenelement = 0;
-
-
-
+/*--------------------------------------------------*/
 
 
 int32_t DYN_GetSpeed(){
@@ -99,16 +89,27 @@ int32_t DYN_CalcCurr(int32_t kraft){
 
 }
 
-static void DYN_CalcSpeed(void *pvParameters){
-	int32_t result;
-	portTickType xLastWakeTime;
+/*--------------------------------------------------*/
 
-	(void)pvParameters;
+/*!
+ * \brief Calculates the speed based on the Input from the DriveSwitch file
+ * \this is the function used by the task
+ */
+
+static void DYN_CalcSpeed(void *pvParameters){
+
+	(void)pvParameters; /* not used */
+
+	/* initialise timekeeping */
+	portTickType xLastWakeTime;
 	xLastWakeTime = xTaskGetTickCount();
 
-	// Funktionseigene Variabeln
-	int32_t fhang = 0; //Da keine Streckenelemete vorhanden sind, kann fhang nicht berechnet werden.
-	int32_t Fk = 0; // Da keine Streckenelente vorhanden sind, kann Fk nicht berechnet werden.
+
+
+
+	/* Function variables */
+	int32_t fhang = 0; 	// Da keine Streckenelemente vorhanden sind, kann fhang nicht berechnet werden.
+	int32_t Fk = 0; 	// Da keine Streckenelemente vorhanden sind, kann Fk nicht berechnet werden.
 	int32_t fantrieb;
 	int32_t fbrems;
 	int32_t fmechbrems;
@@ -117,15 +118,12 @@ static void DYN_CalcSpeed(void *pvParameters){
 	int32_t fbeschl;
 	int32_t fres;
 
-	int32_t vreal;
-
-
-#ifdef DO_INTERPOL
+	/* Vraibles used for the interpolation of the values from the Fahr- and Bremstabellen */
 	int32_t VStufeX;
 	int32_t VStufeY;
 	int32_t geschwgeru;
-	float x;
-#endif
+	float x; //Interpolationsvariable
+
 
 
 	for(;;){
@@ -135,8 +133,6 @@ static void DYN_CalcSpeed(void *pvParameters){
 #endif
 
 
-
-#if DO_INTERPOL
 		VStufeX = (int)(geschwindigkeit) / 5;
 		VStufeY = 1+(int)(geschwindigkeit) / 5;
 		VStufe = VStufeX;
@@ -160,26 +156,6 @@ static void DYN_CalcSpeed(void *pvParameters){
 			DYN_IF = 0;
 		}
 
-
-#endif
-#if !DO_INTERPOL
-		VStufe = ((int)geschwindigkeit / 130) * 27;
-
-		if (DYN_SS > 0) {
-			fantrieb = Fahrtabelle[DYN_SS][VStufe];
-			DYN_IF = DYN_CalcCurr(fantrieb);
-			fbrems = 0;
-		} else if (DYN_SS < 0) {
-			fbrems = Bremstabelle[-DYN_SS][VStufe];
-			DYN_IF = DYN_CalcCurr(fbrems);
-			fantrieb = 0;
-		} else {
-			fantrieb = 0;
-			fbrems = 0;
-			DYN_IF = 0;
-		}
-
-#endif
 
 
 
@@ -278,11 +254,12 @@ static void DYN_CalcSpeed(void *pvParameters){
 
 
 
-
+		//Schreiben der Variablen für J-Scope (cast auf Integer)
 		DYN_currSpeed = geschwindigkeit;
 		DYN_FAntrieb = fantrieb;
 		DYN_BTotal = fbremstotal;
 		DYN_kiloAcc = (int)(beschleunigung*1000);
+
 
 
 

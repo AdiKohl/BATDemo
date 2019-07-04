@@ -69,8 +69,8 @@ The times are converted from milliseconds to ticks using the pdMS_TO_TICKS() mac
 /*-----------------------------------------------------------*/
 
 /* the Tasks used for the state machine */
-static void tskReadInput   (void *pvParameters);
-static void tskShowState    (void *pvParameters);
+static void DS_ReadInput   (void *pvParameters);
+static void DS_ShowState    (void *pvParameters);
 static void DS_Controller   (void *pvParameters);
 
 /*-----------------------------------------------------------*/
@@ -120,7 +120,7 @@ int32_t DS_GetSS(){
 
 /*-----------------------------------------------------------*/
 
-static void tskReadInput(void *pvParameters)
+static void DS_ReadInput(void *pvParameters)
 {
     TickType_t xNextWakeTime;
     const TickType_t xBlockTime = ReadInput_FREQUENCY_MS;
@@ -161,7 +161,7 @@ static void tskReadInput(void *pvParameters)
 
 /*-----------------------------------------------------------*/
 
-static void tskShowState(void *pvParameters)
+static void DS_ShowState(void *pvParameters)
 {
     TickType_t xNextWakeTime;
     const TickType_t xBlockTime = ShowState_FREQUENCY_MS;
@@ -545,11 +545,11 @@ void DS_Init(void) {
 	    queueController  = xQueueCreate(QUEUE_LENGTH, sizeof(uint32_t));
 	    if (queueController != NULL){
 	    	/* Create the tasks */
-	        //if (xTaskCreate(tskReadInput, "ReadButton", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL ) != pdPASS){
+	        //if (xTaskCreate(DS_ReadInput, "ReadButton", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL ) != pdPASS){
 	        //	for(;;){} /* error */
 	        //}
 
-	        if(xTaskCreate(tskShowState, "ShowState", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL ) != pdPASS) {
+	        if(xTaskCreate(DS_ShowState, "ShowState", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+2, NULL ) != pdPASS) {
 	        	for(;;){} /* error */
 	        }
 
