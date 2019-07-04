@@ -38,12 +38,12 @@ static int32_t DYN_FAntrieb = 0;
 static int32_t DYN_BTotal = 0;
 static int32_t DYN_kiloAcc = 0;
 static int32_t DYN_IF = 0;
-static int32_t VStufe = 0;
+static int32_t DYN_VStufe = 0;
 
 /* Variables used for the calculation */
-static float geschwindigkeit = 0;
-static float geschwindigkeitneu = 0;
-static float beschleunigung = 0;
+static float DYN_fSpeed = 0;
+static float DYN_fSpeednew = 0;
+static float DYN_fAcc = 0;
 
 /* Inputvariables */
 static int32_t DYN_SS = 0;
@@ -107,7 +107,7 @@ static void DYN_CalcSpeed(void *pvParameters){
 
 
 
-	/* Function variables */
+	/* Function variables not visible from the outside of this function*/
 	int32_t fhang = 0; 	// Da keine Streckenelemente vorhanden sind, kann fhang nicht berechnet werden.
 	int32_t Fk = 0; 	// Da keine Streckenelemente vorhanden sind, kann Fk nicht berechnet werden.
 	int32_t fantrieb;
@@ -133,11 +133,11 @@ static void DYN_CalcSpeed(void *pvParameters){
 #endif
 
 
-		VStufeX = (int)(geschwindigkeit) / 5;
-		VStufeY = 1+(int)(geschwindigkeit) / 5;
-		VStufe = VStufeX;
+		VStufeX = (int)(DYN_fSpeed) / 5;
+		VStufeY = 1+(int)(DYN_fSpeed) / 5;
+		DYN_VStufe = VStufeX;
 
-		x = geschwindigkeit-(float)(VStufe*5);
+		x = DYN_fSpeed-(float)(DYN_VStufe*5);
 
 
 
@@ -148,7 +148,7 @@ static void DYN_CalcSpeed(void *pvParameters){
 		} else if(DYN_SS < 0) {
 			fbrems = Bremstabelle[-DYN_SS][VStufeX]+(int)((float)((Bremstabelle[-DYN_SS][VStufeY]-Bremstabelle[-DYN_SS][VStufeX])/5)*x);
 			DYN_IF = DYN_CalcCurr(fbrems);
-			if(geschwindigkeit == 0) DYN_IF = 0;
+			if(DYN_fSpeed == 0) DYN_IF = 0;
 			fantrieb = 0;
 		} else {
 			fantrieb = 0;
@@ -157,9 +157,9 @@ static void DYN_CalcSpeed(void *pvParameters){
 		}
 
 
+#if 0 	/* These parts need hardware implementation of on-track-sensors. These do not exist yet, so calculation is neglected */
+		/* If you want to add these, make sure to test them, since those functions are still in a concept-like state */
 
-
-/*
 		// Berechnung der Hangabtriebskraft und Krümmungswiderstand
 	if (bisherigesStreckenelement != Streckenelement) { //Prüfen, ob neues Streckenelement erreicht wurde
 
@@ -179,7 +179,8 @@ static void DYN_CalcSpeed(void *pvParameters){
 		bisherigesStreckenelement = Streckenelement;//Das neue Streckenelement zum aktuellen Streckenelement machen
 	}
 
-*/
+#endif
+
 		// Mechanische Bremsen
 		 fmechbrems = DYN_MB * 776; //Muss noch genauer überlegt werden... Für analoge Inputs fehlt das Interface! 198000 / 255
 
@@ -189,16 +190,16 @@ static void DYN_CalcSpeed(void *pvParameters){
 
 		//if(beschleunigung > 5.0) beschleunigung = 5.0;
 		//if(beschleunigung < -5.0) beschleunigung = -5.0;
-		float Fb = 1 * DYN_MassZug * beschleunigung * 1.1;
+		float Fb = 1 * DYN_MassZug * DYN_fAcc * 1.1;
 
 		// Rollwiderstand
 		int32_t Fr = 15 * DYN_MassZug;
 
 		// Stosswiderstand
-		float Fs = 0.025 * DYN_MassZug * geschwindigkeit;
+		float Fs = 0.025 * DYN_MassZug * DYN_fSpeed;
 
 		// Luftwiderstand
-		float Fl = (0.62 + 0.1 * (ANZ_WAG - 2)) * 6.25 * geschwindigkeit * geschwindigkeit;
+		float Fl = (0.62 + 0.1 * (ANZ_WAG - 2)) * 6.25 * DYN_fSpeed * DYN_fSpeed;
 
 		// Gesamtwiderstand
 		fwiderst = Fb + Fr + Fs + Fl + Fk;
@@ -207,10 +208,10 @@ static void DYN_CalcSpeed(void *pvParameters){
 		fbeschl = fantrieb + fhang;
 
 		// Bremsende Kräfte summieren und korrekt ausrichten
-		if (geschwindigkeit > 0) {
+		if (DYN_fSpeed > 0) {
 			fbremstotal = fwiderst + fmechbrems + fbrems;
 
-		} else if (geschwindigkeit < 0) {
+		} else if (DYN_fSpeed < 0) {
 			fbremstotal = -(fwiderst + fmechbrems + fbrems);
 		} else {
 			if (fbeschl >= 0) {
@@ -222,7 +223,7 @@ static void DYN_CalcSpeed(void *pvParameters){
 
 		// Beschleunigungskräfte und Bremskräfte summieren und korrekt ausrichten
 
-		if(geschwindigkeit == 0){
+		if(DYN_fSpeed == 0){
 			if (abs(fbeschl) - abs(fbremstotal) < 0) {
 				fres = 0;
 			}else{
@@ -233,32 +234,32 @@ static void DYN_CalcSpeed(void *pvParameters){
 		}
 
 		// Beschleunigung berechnen
-		beschleunigung = (float)fres / (DYN_MassZug*1000);
+		DYN_fAcc = (float)fres / (DYN_MassZug*1000);
 
 
 		// Beschleunigung integrieren
-		geschwindigkeitneu = geschwindigkeit + beschleunigung * 0.01;
-		if((geschwindigkeit > 0 && geschwindigkeitneu < 0) || (geschwindigkeit < 0 && geschwindigkeitneu > 0)){ //nulldurchgang verhindern
-			geschwindigkeit = 0;
+		DYN_fSpeednew = DYN_fSpeed + DYN_fAcc * 0.01;
+		if((DYN_fSpeed > 0 && DYN_fSpeednew < 0) || (DYN_fSpeed < 0 && DYN_fSpeednew > 0)){ //nulldurchgang verhindern
+			DYN_fSpeed = 0;
 		}else {
-			geschwindigkeit = geschwindigkeitneu;
+			DYN_fSpeed = DYN_fSpeednew;
 		}
 
 
 
 		// Begrenzung der Geschwindigkeit
-		if(geschwindigkeit > 130) geschwindigkeit = 130;
-		if(geschwindigkeit < -130) geschwindigkeit = -130;
+		if(DYN_fSpeed > 130) DYN_fSpeed = 130;
+		if(DYN_fSpeed < -130) DYN_fSpeed = -130;
 
 
 
 
 
 		//Schreiben der Variablen für J-Scope (cast auf Integer)
-		DYN_currSpeed = geschwindigkeit;
+		DYN_currSpeed = DYN_fSpeed;
 		DYN_FAntrieb = fantrieb;
 		DYN_BTotal = fbremstotal;
-		DYN_kiloAcc = (int)(beschleunigung*1000);
+		DYN_kiloAcc = (int)(DYN_fAcc*1000);
 
 
 
