@@ -132,7 +132,7 @@ static void DYN_CalcSpeed(void *pvParameters){
 		DYN_SS = DS_GetSS();
 #endif
 
-
+		/* Calculation of the 2 spots to interpolate between */
 		VStufeX = (int)(DYN_fSpeed) / 5;
 		VStufeY = 1+(int)(DYN_fSpeed) / 5;
 		DYN_VStufe = VStufeX;
@@ -140,7 +140,7 @@ static void DYN_CalcSpeed(void *pvParameters){
 		x = DYN_fSpeed-(float)(DYN_VStufe*5);
 
 
-
+		/* Readout of the tables wiht interpolation in both cases (Fahren / Bremsen) */
 		if(DYN_SS > 0) {
 			fantrieb = Fahrtabelle[DYN_SS][VStufeX]+(int)((float)((Fahrtabelle[DYN_SS][VStufeY]-Fahrtabelle[DYN_SS][VStufeX])/5)*x);
 			DYN_IF = DYN_CalcCurr(fantrieb);
@@ -181,33 +181,32 @@ static void DYN_CalcSpeed(void *pvParameters){
 
 #endif
 
-		// Mechanische Bremsen
-		 fmechbrems = DYN_MB * 776; //Muss noch genauer überlegt werden... Für analoge Inputs fehlt das Interface! 198000 / 255
+		/* Calculation of all resistive forces. See documentation for formulas */
+		// Mechanical brakes (pneumaticly actuated)
+		 fmechbrems = DYN_MB * 776; //Needs to be thoght over again. Currently there is no interface to read in the break lever! 198000 / 255
 
 
-		// Fahrwiderstände. masse = [t], geschwindigkeit = [km/h], beschleunigung = [m/s2] Kräfte = [N]
-		// Beschleunigungswiderstand
+		// Driving resistances. mass = [t], velocity = [km/h], acceleration = [m/s2], forces = [N]
 
-		//if(beschleunigung > 5.0) beschleunigung = 5.0;
-		//if(beschleunigung < -5.0) beschleunigung = -5.0;
+		// Acceleration resistance. The formula is actually 1000*mass*acc*1.1 but this created problems with the time-discrete calculations, so it was toned down
 		float Fb = 1 * DYN_MassZug * DYN_fAcc * 1.1;
 
-		// Rollwiderstand
+		// Roll resistance (velocity undependant)
 		int32_t Fr = 15 * DYN_MassZug;
 
-		// Stosswiderstand
+		// Push resistance (velocity dependant)
 		float Fs = 0.025 * DYN_MassZug * DYN_fSpeed;
 
-		// Luftwiderstand
+		// Air resistance (velocity^2 dependant)
 		float Fl = (0.62 + 0.1 * (ANZ_WAG - 2)) * 6.25 * DYN_fSpeed * DYN_fSpeed;
 
-		// Gesamtwiderstand
+		// total resistance
 		fwiderst = Fb + Fr + Fs + Fl + Fk;
 
-		// Beschleunigende Kräfte summieren
+		// Sum of accelerating forces
 		fbeschl = fantrieb + fhang;
 
-		// Bremsende Kräfte summieren und korrekt ausrichten
+		// Sum of breaking forces and correct direction of those (always against velocity or (if v=0) against accelerating force
 		if (DYN_fSpeed > 0) {
 			fbremstotal = fwiderst + fmechbrems + fbrems;
 
@@ -221,7 +220,7 @@ static void DYN_CalcSpeed(void *pvParameters){
 			}
 		}
 
-		// Beschleunigungskräfte und Bremskräfte summieren und korrekt ausrichten
+		// Sum of accelerating and breaking forces. breaking forces may not accelerate the train from v=0
 
 		if(DYN_fSpeed == 0){
 			if (abs(fbeschl) - abs(fbremstotal) < 0) {
@@ -233,13 +232,13 @@ static void DYN_CalcSpeed(void *pvParameters){
 			fres = fbeschl - fbremstotal;
 		}
 
-		// Beschleunigung berechnen
+		// calculate acceleration (F=m*a)
 		DYN_fAcc = (float)fres / (DYN_MassZug*1000);
 
 
-		// Beschleunigung integrieren
+		// integrate acceleration and prevent pass through zero (problematic in time-discrete systems)
 		DYN_fSpeednew = DYN_fSpeed + DYN_fAcc * 0.01;
-		if((DYN_fSpeed > 0 && DYN_fSpeednew < 0) || (DYN_fSpeed < 0 && DYN_fSpeednew > 0)){ //nulldurchgang verhindern
+		if((DYN_fSpeed > 0 && DYN_fSpeednew < 0) || (DYN_fSpeed < 0 && DYN_fSpeednew > 0)){
 			DYN_fSpeed = 0;
 		}else {
 			DYN_fSpeed = DYN_fSpeednew;
@@ -247,7 +246,7 @@ static void DYN_CalcSpeed(void *pvParameters){
 
 
 
-		// Begrenzung der Geschwindigkeit
+		// confine speed so that readout of tables does not try to access values outside of the tables
 		if(DYN_fSpeed > 130) DYN_fSpeed = 130;
 		if(DYN_fSpeed < -130) DYN_fSpeed = -130;
 
@@ -255,7 +254,7 @@ static void DYN_CalcSpeed(void *pvParameters){
 
 
 
-		//Schreiben der Variablen für J-Scope (cast auf Integer)
+		//Write variables for J-Scope (cast to Integer)
 		DYN_currSpeed = DYN_fSpeed;
 		DYN_FAntrieb = fantrieb;
 		DYN_BTotal = fbremstotal;
@@ -263,7 +262,7 @@ static void DYN_CalcSpeed(void *pvParameters){
 
 
 
-
+		/* Put thread to sleep */
 		FRTOS1_vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
 	}
 }
