@@ -38,6 +38,7 @@ static int32_t DYN_FAntrieb = 0;
 static int32_t DYN_BTotal = 0;
 static int32_t DYN_kiloAcc = 0;
 static int32_t DYN_IF = 0;
+static int32_t DYN_IFnext = 0;
 static int32_t DYN_VStufe = 0;
 
 /* Variables used for the calculation */
@@ -59,6 +60,10 @@ int32_t DYN_GetSpeed(){
 
 int32_t DYN_GetIF(){
 	return DYN_IF;
+}
+
+int32_t DYN_GetIFnext(){
+	return DYN_IFnext;
 }
 
 void DYN_SetSS(int32_t value){
@@ -111,6 +116,7 @@ static void DYN_CalcSpeed(void *pvParameters){
 	int32_t fhang = 0; 	// Da keine Streckenelemente vorhanden sind, kann fhang nicht berechnet werden.
 	int32_t Fk = 0; 	// Da keine Streckenelemente vorhanden sind, kann Fk nicht berechnet werden.
 	int32_t fantrieb;
+	int32_t fantriebnext;
 	int32_t fbrems;
 	int32_t fmechbrems;
 	int32_t fwiderst;
@@ -143,7 +149,13 @@ static void DYN_CalcSpeed(void *pvParameters){
 		/* Readout of the tables wiht interpolation in both cases (Fahren / Bremsen) */
 		if(DYN_SS > 0) {
 			fantrieb = Fahrtabelle[DYN_SS][VStufeX]+(int)((float)((Fahrtabelle[DYN_SS][VStufeY]-Fahrtabelle[DYN_SS][VStufeX])/5)*x);
+			if(DYN_SS < 28){ /* also calculate for the next SS */
+				fantriebnext = Fahrtabelle[DYN_SS+1][VStufeX]+(int)((float)((Fahrtabelle[DYN_SS+1][VStufeY]-Fahrtabelle[DYN_SS+1][VStufeX])/5)*x);
+			}else{
+				fantriebnext = fantrieb;
+			}
 			DYN_IF = DYN_CalcCurr(fantrieb);
+			DYN_IFnext = DYN_CalcCurr(fantriebnext);
 			fbrems = 0;
 		} else if(DYN_SS < 0) {
 			fbrems = Bremstabelle[-DYN_SS][VStufeX]+(int)((float)((Bremstabelle[-DYN_SS][VStufeY]-Bremstabelle[-DYN_SS][VStufeX])/5)*x);

@@ -478,9 +478,11 @@ static void DS_SSCalc(void *pvParameters){
 
 	int32_t DS_SSCounter = 0;
 	int32_t DS_IF = 0;
+	int32_t DS_IFNext = 0;
 
 	for(;;){
 		DS_IF = DYN_GetIF();
+		DS_IFNext = DYN_GetIFnext();
 		DS_SSCounter++; /* count up every time (every 330ms) */
 		switch(DS_STNR){
 		case 1: /* State: FB0 */
@@ -503,7 +505,7 @@ static void DS_SSCalc(void *pvParameters){
 
 		case 4: /* State: FM */
 			if(DS_SS < 28){
-				if(DS_IF <= DS_IFM && DS_SSCounter >= 3){
+				if(DS_IFNext <= DS_IFM && DS_SSCounter >= 3){
 					DS_SS++;
 				}
 			}
@@ -511,9 +513,9 @@ static void DS_SSCalc(void *pvParameters){
 
 		case 5: /* State: FP */
 			if(DS_SS < 28){
-				if(DS_IF > DS_IF1H && DS_IFM <= DS_IF && DS_SSCounter >= 3){
+				if(DS_IFNext > DS_IF1H && DS_IFNext <= DS_IFM && DS_SSCounter >= 3){
 					DS_SS++;
-				}else if(DS_IF <= DS_IF1H){
+				}else if(DS_IFNext <= DS_IF1H){
 					DS_SS++;
 				}
 			}
@@ -521,9 +523,9 @@ static void DS_SSCalc(void *pvParameters){
 
 		case 6: /* State: FPP */
 			if(DS_SS < 28){
-				if(DS_IF > DS_IF1H && DS_IFPP <= DS_IF && DS_SSCounter >= 3){
+				if(DS_IFNext > DS_IF1H && DS_IFNext <= DS_IFPP && DS_SSCounter >= 3){
 					DS_SS++;
-				}else if(DS_IF <= DS_IF1H){
+				}else if(DS_IFNext <= DS_IF1H){
 					DS_SS++;
 				}
 			}

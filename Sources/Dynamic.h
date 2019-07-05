@@ -31,6 +31,13 @@ int32_t DYN_GetSpeed(void);
 int32_t DYN_GetIF(void);
 
 /*!
+ * \brief Returns the calculated current.
+ * \return current in [A]
+ */
+int32_t DYN_GetIFnext(void);
+
+
+/*!
  * \brief Sets the DYN_SS variable (used with the Shell).
  */
 void DYN_SetSS(int32_t value);
